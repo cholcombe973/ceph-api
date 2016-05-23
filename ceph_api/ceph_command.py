@@ -1,4 +1,4 @@
-import ceph
+from charmhelpers.contrib.storage.linux import ceph
 import json
 import os
 import os.path
@@ -9,7 +9,7 @@ import stat
 
 class CephError(Exception):
     """Exception raised for errors with running a Ceph command
-    Attributes:
+        Attributes:
         cmd -- cmd in which the error occurred
         msg  -- explanation of the error
     """
