@@ -9,9 +9,9 @@ import stat
 
 class CephError(Exception):
     """Exception raised for errors with running a Ceph command
-        Attributes:
-        cmd -- cmd in which the error occurred
-        msg  -- explanation of the error
+
+        :param cmd: cmd in which the error occurred
+        :param msg: explanation of the error
     """
 
     def __init__(self, cmd, msg):
@@ -21,10 +21,12 @@ class CephError(Exception):
 
 def run_ceph_command(conffile, cmd, inbuf):
     """Run a ceph command and return the results
+
     :param conffile: The ceph.conf configuration location
     :param cmd: The json command to run
     :param inbuf:
-    :return: :raise e:
+    :return: (string outbuf, string outs)
+    :raise rados.Error: Raises on rados errors
     """
     cluster = rados.Rados(conffile=conffile)
     try:
