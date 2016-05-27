@@ -5,7 +5,9 @@
 
 ceph_api's Documentation
 ====================================
-The `ceph_api` is a wrapper around librados json commands
+The `ceph_api` is a wrapper around librados json commands. For the most current
+version of ceph use the ceph_api.ceph_command.  For older versions please refer
+to the submodules for version specific ceph_command files.
 
 
 .. toctree::   
