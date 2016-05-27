@@ -139,22 +139,18 @@ class PlacementGroupCommand:
         cmd = {'prefix': 'pg dump_pools_json'}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def pg_dump_stuck(self, threshold=None, stuckops=None):
+    def pg_dump_stuck(self, stuckops=None, threshold=None):
         """
         show information about stuck pgs
 
-        :param threshold: int
         :param stuckops: list valid_range=["inactive","unclean","stale","undersized","degraded"] allowed repeats=many
+        :param threshold: int
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
         cmd = {'prefix': 'pg dump_stuck'}
-
-        if threshold is not None:
-            assert isinstance(threshold, int), str(threshold) + " is not a int"
-            cmd['threshold'] = threshold
 
         if stuckops is not None:
             ceph.validator(
@@ -163,14 +159,18 @@ class PlacementGroupCommand:
                 valid_range=["inactive", "unclean", "stale", "undersized",
                              "degraded"]), str(stuckops) + " is not a list"
             cmd['stuckops'] = stuckops
+
+        if threshold is not None:
+            assert isinstance(threshold, int), str(threshold) + " is not a int"
+            cmd['threshold'] = threshold
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def pg_ls_by_pool(self, poolstr, states=None):
         """
         list pg with pool = [poolname | poolid]
 
-        :param poolstr: six.string_types allowed repeats=one
         :param states: list valid_range=["active","clean","down","replay","splitting","scrubbing","scrubq","degraded","inconsistent","peering","repair","recovering","backfill_wait","incomplete","stale","remapped","deep_scrub","backfill","backfill_toofull","recovery_wait","undersized"] allowed repeats=many
+        :param poolstr: six.string_types allowed repeats=one
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
@@ -193,13 +193,13 @@ class PlacementGroupCommand:
             cmd['states'] = states
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def pg_ls_by_primary(self, osd, pool=None, states=None):
+    def pg_ls_by_primary(self, osd, states=None, pool=None):
         """
         list pg with primary = [osd]
 
-        :param pool: int
-        :param states: list valid_range=["active","clean","down","replay","splitting","scrubbing","scrubq","degraded","inconsistent","peering","repair","recovering","backfill_wait","incomplete","stale","remapped","deep_scrub","backfill","backfill_toofull","recovery_wait","undersized"] allowed repeats=many
         :param osd: six.string_types
+        :param states: list valid_range=["active","clean","down","replay","splitting","scrubbing","scrubq","degraded","inconsistent","peering","repair","recovering","backfill_wait","incomplete","stale","remapped","deep_scrub","backfill","backfill_toofull","recovery_wait","undersized"] allowed repeats=many
+        :param pool: int
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
@@ -208,10 +208,6 @@ class PlacementGroupCommand:
         assert isinstance(osd, six.string_types), str(osd) + " is not a String"
         cmd = {'prefix': 'pg ls-by-primary', 'osd': osd}
 
-        if pool is not None:
-            assert isinstance(pool, int), str(pool) + " is not a int"
-            cmd['pool'] = pool
-
         if states is not None:
             ceph.validator(value=states,
                            valid_type=list,
@@ -223,15 +219,19 @@ class PlacementGroupCommand:
                             "backfill", "backfill_toofull", "recovery_wait",
                             "undersized"]), str(states) + " is not a list"
             cmd['states'] = states
+
+        if pool is not None:
+            assert isinstance(pool, int), str(pool) + " is not a int"
+            cmd['pool'] = pool
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def pg_ls_by_osd(self, osd, states=None, pool=None):
+    def pg_ls_by_osd(self, osd, pool=None, states=None):
         """
         list pg on osd [osd]
 
-        :param osd: six.string_types
-        :param states: list valid_range=["active","clean","down","replay","splitting","scrubbing","scrubq","degraded","inconsistent","peering","repair","recovering","backfill_wait","incomplete","stale","remapped","deep_scrub","backfill","backfill_toofull","recovery_wait","undersized"] allowed repeats=many
         :param pool: int
+        :param states: list valid_range=["active","clean","down","replay","splitting","scrubbing","scrubq","degraded","inconsistent","peering","repair","recovering","backfill_wait","incomplete","stale","remapped","deep_scrub","backfill","backfill_toofull","recovery_wait","undersized"] allowed repeats=many
+        :param osd: six.string_types
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
@@ -240,6 +240,10 @@ class PlacementGroupCommand:
         assert isinstance(osd, six.string_types), str(osd) + " is not a String"
         cmd = {'prefix': 'pg ls-by-osd', 'osd': osd}
 
+        if pool is not None:
+            assert isinstance(pool, int), str(pool) + " is not a int"
+            cmd['pool'] = pool
+
         if states is not None:
             ceph.validator(value=states,
                            valid_type=list,
@@ -251,10 +255,6 @@ class PlacementGroupCommand:
                             "backfill", "backfill_toofull", "recovery_wait",
                             "undersized"]), str(states) + " is not a list"
             cmd['states'] = states
-
-        if pool is not None:
-            assert isinstance(pool, int), str(pool) + " is not a int"
-            cmd['pool'] = pool
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def pg_ls(self, pool=None, states=None):
@@ -532,25 +532,25 @@ class MdsCommand:
         cmd = {'prefix': 'mds set_max_mds', 'maxmds': maxmds}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def mds_set(self, var, val, confirm=None):
+    def mds_set(self, val, var, confirm=None):
         """
         set mds parameter <var> to <val>
 
+        :param val: six.string_types allowed repeats=one
         :param confirm: six.string_types allowed repeats=one
         :param var: list valid_range=["max_mds","max_file_size","allow_new_snaps","inline_data"] allowed repeats=one
-        :param val: six.string_types allowed repeats=one
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
+        assert isinstance(val, six.string_types), str(val) + " is not a String"
         ceph.validator(
             value=var,
             valid_type=list,
             valid_range=["max_mds", "max_file_size", "allow_new_snaps",
                          "inline_data"]), str(var) + " is not a list"
-        assert isinstance(val, six.string_types), str(val) + " is not a String"
-        cmd = {'prefix': 'mds set', 'var': var, 'val': val}
+        cmd = {'prefix': 'mds set', 'val': val, 'var': var}
 
         if confirm is not None:
             assert isinstance(
@@ -572,20 +572,20 @@ class MdsCommand:
         cmd = {'prefix': 'mds setmap', 'epoch': epoch}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def mds_set_state(self, state, gid):
+    def mds_set_state(self, gid, state):
         """
         set mds state of <gid> to <numeric-state>
 
-        :param state: int min=0 max=20
         :param gid: int min=0
+        :param state: int min=0 max=20
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(state, int), str(state) + " is not a int"
         assert isinstance(gid, int), str(gid) + " is not a int"
-        cmd = {'prefix': 'mds set_state', 'state': state, 'gid': gid}
+        assert isinstance(state, int), str(state) + " is not a int"
+        cmd = {'prefix': 'mds set_state', 'gid': gid, 'state': state}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def mds_fail(self, who):
@@ -716,21 +716,21 @@ class MdsCommand:
         cmd = {'prefix': 'mds remove_data_pool', 'pool': pool}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def mds_newfs(self, data, metadata, sure=None):
+    def mds_newfs(self, metadata, data, sure=None):
         """
         make new filesystem using pools <metadata> and <data>
 
         :param sure: list valid_range=["--yes-i-really-mean-it"] allowed repeats=one
-        :param data: int min=0
         :param metadata: int min=0
+        :param data: int min=0
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(data, int), str(data) + " is not a int"
         assert isinstance(metadata, int), str(metadata) + " is not a int"
-        cmd = {'prefix': 'mds newfs', 'data': data, 'metadata': metadata}
+        assert isinstance(data, int), str(data) + " is not a int"
+        cmd = {'prefix': 'mds newfs', 'metadata': metadata, 'data': data}
 
         if sure is not None:
             ceph.validator(value=sure,
@@ -910,22 +910,22 @@ class OsdCommand:
         cmd = {'prefix': 'osd metadata', 'id': id}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_map(self, object, pool):
+    def osd_map(self, pool, object):
         """
         find pg for <object> in <pool>
 
-        :param object: six.string_types
         :param pool: six.string_types allowed repeats=one
+        :param object: six.string_types
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(object,
-                          six.string_types), str(object) + " is not a String"
         assert isinstance(pool,
                           six.string_types), str(pool) + " is not a String"
-        cmd = {'prefix': 'osd map', 'object': object, 'pool': pool}
+        assert isinstance(object,
+                          six.string_types), str(object) + " is not a String"
+        cmd = {'prefix': 'osd map', 'pool': pool, 'object': object}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def osd_scrub(self, who):
@@ -1122,109 +1122,109 @@ class OsdCommand:
                'dstname': dstname}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_crush_set(self, id, weight, args):
+    def osd_crush_set(self, weight, id, args):
         """
         update crushmap position and weight for <name> to 
         <weight> with location <args>
 
-        :param id: six.string_types
         :param weight: float min=0
+        :param id: six.string_types
         :param args: six.string_types valid_characters=[A-Za-z0-9-_.=] allowed repeats=many
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(id, six.string_types), str(id) + " is not a String"
         assert isinstance(weight, float), str(weight) + " is not a float"
+        assert isinstance(id, six.string_types), str(id) + " is not a String"
         assert isinstance(args,
                           six.string_types), str(args) + " is not a String"
         cmd = {'prefix': 'osd crush set',
-               'id': id,
                'weight': weight,
+               'id': id,
                'args': args}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_crush_add(self, weight, id, args):
+    def osd_crush_add(self, id, args, weight):
         """
         add or update crushmap position and weight for <name> with 
         <weight> and location <args>
 
-        :param weight: float min=0
         :param id: six.string_types
         :param args: six.string_types valid_characters=[A-Za-z0-9-_.=] allowed repeats=many
+        :param weight: float min=0
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(weight, float), str(weight) + " is not a float"
         assert isinstance(id, six.string_types), str(id) + " is not a String"
         assert isinstance(args,
                           six.string_types), str(args) + " is not a String"
+        assert isinstance(weight, float), str(weight) + " is not a float"
         cmd = {'prefix': 'osd crush add',
-               'weight': weight,
                'id': id,
-               'args': args}
+               'args': args,
+               'weight': weight}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_crush_create_or_move(self, id, weight, args):
+    def osd_crush_create_or_move(self, args, id, weight):
         """
         create entry or move existing entry for <name> <weight> 
         at/to location <args>
 
+        :param args: six.string_types valid_characters=[A-Za-z0-9-_.=] allowed repeats=many
         :param id: six.string_types
         :param weight: float min=0
-        :param args: six.string_types valid_characters=[A-Za-z0-9-_.=] allowed repeats=many
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(id, six.string_types), str(id) + " is not a String"
-        assert isinstance(weight, float), str(weight) + " is not a float"
         assert isinstance(args,
                           six.string_types), str(args) + " is not a String"
+        assert isinstance(id, six.string_types), str(id) + " is not a String"
+        assert isinstance(weight, float), str(weight) + " is not a float"
         cmd = {'prefix': 'osd crush create-or-move',
+               'args': args,
                'id': id,
-               'weight': weight,
-               'args': args}
+               'weight': weight}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_crush_move(self, args, name):
+    def osd_crush_move(self, name, args):
         """
         move existing entry for <name> to location <args>
 
-        :param args: six.string_types valid_characters=[A-Za-z0-9-_.=] allowed repeats=many
         :param name: six.string_types valid_characters=[A-Za-z0-9-_.] allowed repeats=one
+        :param args: six.string_types valid_characters=[A-Za-z0-9-_.=] allowed repeats=many
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(args,
-                          six.string_types), str(args) + " is not a String"
         assert isinstance(name,
                           six.string_types), str(name) + " is not a String"
-        cmd = {'prefix': 'osd crush move', 'args': args, 'name': name}
+        assert isinstance(args,
+                          six.string_types), str(args) + " is not a String"
+        cmd = {'prefix': 'osd crush move', 'name': name, 'args': args}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_crush_link(self, args, name):
+    def osd_crush_link(self, name, args):
         """
         link existing entry for <name> under location <args>
 
-        :param args: six.string_types valid_characters=[A-Za-z0-9-_.=] allowed repeats=many
         :param name: six.string_types allowed repeats=one
+        :param args: six.string_types valid_characters=[A-Za-z0-9-_.=] allowed repeats=many
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(args,
-                          six.string_types), str(args) + " is not a String"
         assert isinstance(name,
                           six.string_types), str(name) + " is not a String"
-        cmd = {'prefix': 'osd crush link', 'args': args, 'name': name}
+        assert isinstance(args,
+                          six.string_types), str(args) + " is not a String"
+        cmd = {'prefix': 'osd crush link', 'name': name, 'args': args}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def osd_crush_rm(self, name, ancestor=None):
@@ -1232,8 +1232,8 @@ class OsdCommand:
         remove <name> from crush map (everywhere, or just at 
         <ancestor>)
 
-        :param ancestor: six.string_types allowed repeats=one
         :param name: six.string_types valid_characters=[A-Za-z0-9-_.] allowed repeats=one
+        :param ancestor: six.string_types allowed repeats=one
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
@@ -1276,8 +1276,8 @@ class OsdCommand:
         unlink <name> from crush map (everywhere, or just at 
         <ancestor>)
 
-        :param ancestor: six.string_types allowed repeats=one
         :param name: six.string_types valid_characters=[A-Za-z0-9-_.] allowed repeats=one
+        :param ancestor: six.string_types allowed repeats=one
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
@@ -1324,24 +1324,24 @@ class OsdCommand:
         cmd = {'prefix': 'osd crush reweight', 'name': name, 'weight': weight}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_crush_reweight_subtree(self, name, weight):
+    def osd_crush_reweight_subtree(self, weight, name):
         """
         change all leaf items beneath <name> to <weight> in crush 
         map
 
-        :param name: six.string_types valid_characters=[A-Za-z0-9-_.] allowed repeats=one
         :param weight: float min=0
+        :param name: six.string_types valid_characters=[A-Za-z0-9-_.] allowed repeats=one
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
+        assert isinstance(weight, float), str(weight) + " is not a float"
         assert isinstance(name,
                           six.string_types), str(name) + " is not a String"
-        assert isinstance(weight, float), str(weight) + " is not a float"
         cmd = {'prefix': 'osd crush reweight-subtree',
-               'name': name,
-               'weight': weight}
+               'weight': weight,
+               'name': name}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def osd_crush_tunables(self, profile):
@@ -1413,31 +1413,31 @@ class OsdCommand:
         cmd = {'prefix': 'osd crush show-tunables'}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_crush_rule_create_simple(self, type, root, name, mode=None):
+    def osd_crush_rule_create_simple(self, name, root, type, mode=None):
         """
         create crush rule <name> to start from <root>, replicate 
         across buckets of type <type>, using a choose mode of 
         <firstn|indep> (default firstn; indep best for erasure pools)
 
-        :param type: six.string_types valid_characters=[A-Za-z0-9-_.] allowed repeats=one
-        :param root: six.string_types valid_characters=[A-Za-z0-9-_.] allowed repeats=one
-        :param mode: list valid_range=["firstn","indep"] allowed repeats=one
         :param name: six.string_types valid_characters=[A-Za-z0-9-_.] allowed repeats=one
+        :param mode: list valid_range=["firstn","indep"] allowed repeats=one
+        :param root: six.string_types valid_characters=[A-Za-z0-9-_.] allowed repeats=one
+        :param type: six.string_types valid_characters=[A-Za-z0-9-_.] allowed repeats=one
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(type,
-                          six.string_types), str(type) + " is not a String"
-        assert isinstance(root,
-                          six.string_types), str(root) + " is not a String"
         assert isinstance(name,
                           six.string_types), str(name) + " is not a String"
+        assert isinstance(root,
+                          six.string_types), str(root) + " is not a String"
+        assert isinstance(type,
+                          six.string_types), str(type) + " is not a String"
         cmd = {'prefix': 'osd crush rule create-simple',
-               'type': type,
+               'name': name,
                'root': root,
-               'name': name}
+               'type': type}
 
         if mode is not None:
             ceph.validator(
@@ -1543,8 +1543,8 @@ class OsdCommand:
         ...] pairs. Add a --force at the end to override an existing 
         profile (VERY DANGEROUS)
 
-        :param profile: six.string_types allowed repeats=many
         :param name: six.string_types valid_characters=[A-Za-z0-9-_.] allowed repeats=one
+        :param profile: six.string_types allowed repeats=many
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
@@ -1712,20 +1712,20 @@ class OsdCommand:
         cmd = {'prefix': 'osd rm', 'ids': ids}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_reweight(self, id, weight):
+    def osd_reweight(self, weight, id):
         """
         reweight osd to 0.0 < <weight> < 1.0
 
-        :param id: int min=0
         :param weight: float min=0 max=1
+        :param id: int min=0
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(id, int), str(id) + " is not a int"
         assert isinstance(weight, float), str(weight) + " is not a float"
-        cmd = {'prefix': 'osd reweight', 'id': id, 'weight': weight}
+        assert isinstance(id, int), str(id) + " is not a int"
+        cmd = {'prefix': 'osd reweight', 'weight': weight, 'id': id}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def osd_pg_temp(self, pgid, id=None):
@@ -1750,38 +1750,38 @@ class OsdCommand:
             cmd['id'] = id
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_primary_temp(self, pgid, id):
+    def osd_primary_temp(self, id, pgid):
         """
         set primary_temp mapping pgid:<id>|-1 (developers 
         only)
 
-        :param pgid: six.string_types
         :param id: six.string_types allowed repeats=one
+        :param pgid: six.string_types
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
+        assert isinstance(id, six.string_types), str(id) + " is not a String"
         assert isinstance(pgid,
                           six.string_types), str(pgid) + " is not a String"
-        assert isinstance(id, six.string_types), str(id) + " is not a String"
-        cmd = {'prefix': 'osd primary-temp', 'pgid': pgid, 'id': id}
+        cmd = {'prefix': 'osd primary-temp', 'id': id, 'pgid': pgid}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_primary_affinity(self, id, weight):
+    def osd_primary_affinity(self, weight, id):
         """
         adjust osd primary-affinity from 0.0 <= <weight> <= 1.0
 
-        :param id: six.string_types
         :param weight: float min=0 max=1
+        :param id: six.string_types
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(id, six.string_types), str(id) + " is not a String"
         assert isinstance(weight, float), str(weight) + " is not a float"
-        cmd = {'prefix': 'osd primary-affinity', 'id': id, 'weight': weight}
+        assert isinstance(id, six.string_types), str(id) + " is not a String"
+        cmd = {'prefix': 'osd primary-affinity', 'weight': weight, 'id': id}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def osd_lost(self, id, sure=None):
@@ -1829,8 +1829,8 @@ class OsdCommand:
         add (optionally until <expire> seconds from now) or 
         remove <addr> from blacklist
 
-        :param expire: float min=0
         :param addr: CephIPAddr + optional '/nonce'
+        :param expire: float min=0
         :param blacklistop: list valid_range=["add","rm"] allowed repeats=one
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
@@ -1909,21 +1909,21 @@ class OsdCommand:
     def osd_pool_create(self,
                         pg_num,
                         pool,
+                        ruleset=None,
+                        erasure_code_profile=None,
                         pgp_num=None,
                         expected_num_objects=None,
-                        ruleset=None,
-                        pool_type=None,
-                        erasure_code_profile=None):
+                        pool_type=None):
         """
         create pool
 
         :param pg_num: int min=0
+        :param ruleset: six.string_types allowed repeats=one
+        :param pool: six.string_types allowed repeats=one
+        :param erasure_code_profile: six.string_types allowed repeats=one
         :param pgp_num: int min=0
         :param expected_num_objects: int
-        :param pool: six.string_types allowed repeats=one
-        :param ruleset: six.string_types allowed repeats=one
         :param pool_type: list valid_range=["replicated","erasure"] allowed repeats=one
-        :param erasure_code_profile: six.string_types allowed repeats=one
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
@@ -1934,6 +1934,16 @@ class OsdCommand:
                           six.string_types), str(pool) + " is not a String"
         cmd = {'prefix': 'osd pool create', 'pg_num': pg_num, 'pool': pool}
 
+        if ruleset is not None:
+            assert isinstance(
+                ruleset, six.string_types), str(ruleset) + " is not a String"
+            cmd['ruleset'] = ruleset
+
+        if erasure_code_profile is not None:
+            assert isinstance(erasure_code_profile, six.string_types), str(
+                erasure_code_profile) + " is not a String"
+            cmd['erasure_code_profile'] = erasure_code_profile
+
         if pgp_num is not None:
             assert isinstance(pgp_num, int), str(pgp_num) + " is not a int"
             cmd['pgp_num'] = pgp_num
@@ -1943,31 +1953,21 @@ class OsdCommand:
                               int), str(expected_num_objects) + " is not a int"
             cmd['expected_num_objects'] = expected_num_objects
 
-        if ruleset is not None:
-            assert isinstance(
-                ruleset, six.string_types), str(ruleset) + " is not a String"
-            cmd['ruleset'] = ruleset
-
         if pool_type is not None:
             ceph.validator(value=pool_type,
                            valid_type=list,
                            valid_range=["replicated", "erasure"]), str(
                                pool_type) + " is not a list"
             cmd['pool_type'] = pool_type
-
-        if erasure_code_profile is not None:
-            assert isinstance(erasure_code_profile, six.string_types), str(
-                erasure_code_profile) + " is not a String"
-            cmd['erasure_code_profile'] = erasure_code_profile
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_pool_delete(self, pool, sure=None, pool2=None):
+    def osd_pool_delete(self, pool, pool2=None, sure=None):
         """
         delete pool
 
-        :param sure: list valid_range=["--yes-i-really-really-mean-it"] allowed repeats=one
-        :param pool2: six.string_types
         :param pool: six.string_types allowed repeats=one
+        :param pool2: six.string_types
+        :param sure: list valid_range=["--yes-i-really-really-mean-it"] allowed repeats=one
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
@@ -1977,17 +1977,17 @@ class OsdCommand:
                           six.string_types), str(pool) + " is not a String"
         cmd = {'prefix': 'osd pool delete', 'pool': pool}
 
+        if pool2 is not None:
+            assert isinstance(
+                pool2, six.string_types), str(pool2) + " is not a String"
+            cmd['pool2'] = pool2
+
         if sure is not None:
             ceph.validator(value=sure,
                            valid_type=list,
                            valid_range=["--yes-i-really-really-mean-it"]), str(
                                sure) + " is not a list"
             cmd['sure'] = sure
-
-        if pool2 is not None:
-            assert isinstance(
-                pool2, six.string_types), str(pool2) + " is not a String"
-            cmd['pool2'] = pool2
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def osd_pool_rename(self, destpool, srcpool):
@@ -2037,19 +2037,21 @@ class OsdCommand:
         cmd = {'prefix': 'osd pool get', 'var': var, 'pool': pool}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_pool_set(self, val, var, pool, force=None):
+    def osd_pool_set(self, pool, val, var, force=None):
         """
         set pool parameter <var> to <val>
 
+        :param pool: six.string_types allowed repeats=one
         :param force: list valid_range=["--yes-i-really-mean-it"] allowed repeats=one
         :param val: six.string_types allowed repeats=one
         :param var: list valid_range=["size","min_size","crash_replay_interval","pg_num","pgp_num","crush_ruleset","hashpspool","nodelete","nopgchange","nosizechange","hit_set_type","hit_set_period","hit_set_count","hit_set_fpp","use_gmt_hitset","debug_fake_ec_pool","target_max_bytes","target_max_objects","cache_target_dirty_ratio","cache_target_full_ratio","cache_min_flush_age","cache_min_evict_age","auid","min_read_recency_for_promote","write_fadvise_dontneed"] allowed repeats=one
-        :param pool: six.string_types allowed repeats=one
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
+        assert isinstance(pool,
+                          six.string_types), str(pool) + " is not a String"
         assert isinstance(val, six.string_types), str(val) + " is not a String"
         ceph.validator(
             value=var,
@@ -2064,9 +2066,7 @@ class OsdCommand:
              "cache_min_flush_age", "cache_min_evict_age", "auid",
              "min_read_recency_for_promote", "write_fadvise_dontneed"]), str(
                  var) + " is not a list"
-        assert isinstance(pool,
-                          six.string_types), str(pool) + " is not a String"
-        cmd = {'prefix': 'osd pool set', 'val': val, 'var': var, 'pool': pool}
+        cmd = {'prefix': 'osd pool set', 'pool': pool, 'val': val, 'var': var}
 
         if force is not None:
             ceph.validator(value=force,
@@ -2148,24 +2148,28 @@ class OsdCommand:
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def osd_reweight_by_utilization(self,
+                                    oload=None,
                                     max_osds=None,
                                     no_increasing=None,
-                                    max_change=None,
-                                    oload=None):
+                                    max_change=None):
         """
         reweight OSDs by utilization 
         [overload-percentage-for-consideration, default 120]
 
+        :param oload: int
         :param max_osds: int
         :param no_increasing: list valid_range=["--no-increasing"] allowed repeats=one
         :param max_change: float
-        :param oload: int
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
         cmd = {'prefix': 'osd reweight-by-utilization'}
+
+        if oload is not None:
+            assert isinstance(oload, int), str(oload) + " is not a int"
+            cmd['oload'] = oload
 
         if max_osds is not None:
             assert isinstance(max_osds, int), str(max_osds) + " is not a int"
@@ -2182,25 +2186,21 @@ class OsdCommand:
             assert isinstance(max_change,
                               float), str(max_change) + " is not a float"
             cmd['max_change'] = max_change
-
-        if oload is not None:
-            assert isinstance(oload, int), str(oload) + " is not a int"
-            cmd['oload'] = oload
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def osd_test_reweight_by_utilization(self,
                                          max_change=None,
                                          max_osds=None,
-                                         oload=None,
-                                         no_increasing=None):
+                                         no_increasing=None,
+                                         oload=None):
         """
         dry run of reweight OSDs by utilization 
         [overload-percentage-for-consideration, default 120]
 
         :param max_change: float
         :param max_osds: int
-        :param oload: int
         :param no_increasing: list valid_range=["--no-increasing"] allowed repeats=one
+        :param oload: int
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
@@ -2217,31 +2217,31 @@ class OsdCommand:
             assert isinstance(max_osds, int), str(max_osds) + " is not a int"
             cmd['max_osds'] = max_osds
 
-        if oload is not None:
-            assert isinstance(oload, int), str(oload) + " is not a int"
-            cmd['oload'] = oload
-
         if no_increasing is not None:
             ceph.validator(value=no_increasing,
                            valid_type=list,
                            valid_range=["--no-increasing"]), str(
                                no_increasing) + " is not a list"
             cmd['no_increasing'] = no_increasing
+
+        if oload is not None:
+            assert isinstance(oload, int), str(oload) + " is not a int"
+            cmd['oload'] = oload
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def osd_reweight_by_pg(self,
-                           oload=None,
+                           max_change=None,
                            max_osds=None,
                            pools=None,
-                           max_change=None):
+                           oload=None):
         """
         reweight OSDs by PG distribution 
         [overload-percentage-for-consideration, default 120]
 
-        :param oload: int
+        :param max_change: float
         :param max_osds: int
         :param pools: six.string_types allowed repeats=many
-        :param max_change: float
+        :param oload: int
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
@@ -2249,9 +2249,10 @@ class OsdCommand:
 
         cmd = {'prefix': 'osd reweight-by-pg'}
 
-        if oload is not None:
-            assert isinstance(oload, int), str(oload) + " is not a int"
-            cmd['oload'] = oload
+        if max_change is not None:
+            assert isinstance(max_change,
+                              float), str(max_change) + " is not a float"
+            cmd['max_change'] = max_change
 
         if max_osds is not None:
             assert isinstance(max_osds, int), str(max_osds) + " is not a int"
@@ -2262,25 +2263,24 @@ class OsdCommand:
                 pools, six.string_types), str(pools) + " is not a String"
             cmd['pools'] = pools
 
-        if max_change is not None:
-            assert isinstance(max_change,
-                              float), str(max_change) + " is not a float"
-            cmd['max_change'] = max_change
+        if oload is not None:
+            assert isinstance(oload, int), str(oload) + " is not a int"
+            cmd['oload'] = oload
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def osd_test_reweight_by_pg(self,
-                                oload=None,
+                                pools=None,
                                 max_osds=None,
-                                max_change=None,
-                                pools=None):
+                                oload=None,
+                                max_change=None):
         """
         dry run of reweight OSDs by PG distribution 
         [overload-percentage-for-consideration, default 120]
 
-        :param oload: int
-        :param max_osds: int
-        :param max_change: float
         :param pools: six.string_types allowed repeats=many
+        :param max_osds: int
+        :param oload: int
+        :param max_change: float
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
@@ -2288,23 +2288,23 @@ class OsdCommand:
 
         cmd = {'prefix': 'osd test-reweight-by-pg'}
 
-        if oload is not None:
-            assert isinstance(oload, int), str(oload) + " is not a int"
-            cmd['oload'] = oload
+        if pools is not None:
+            assert isinstance(
+                pools, six.string_types), str(pools) + " is not a String"
+            cmd['pools'] = pools
 
         if max_osds is not None:
             assert isinstance(max_osds, int), str(max_osds) + " is not a int"
             cmd['max_osds'] = max_osds
 
+        if oload is not None:
+            assert isinstance(oload, int), str(oload) + " is not a int"
+            cmd['oload'] = oload
+
         if max_change is not None:
             assert isinstance(max_change,
                               float), str(max_change) + " is not a float"
             cmd['max_change'] = max_change
-
-        if pools is not None:
-            assert isinstance(
-                pools, six.string_types), str(pools) + " is not a String"
-            cmd['pools'] = pools
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def osd_thrash(self, num_epochs):
@@ -2341,24 +2341,24 @@ class OsdCommand:
             cmd['output_method'] = output_method
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_tier_add(self, tierpool, pool, force_nonempty=None):
+    def osd_tier_add(self, pool, tierpool, force_nonempty=None):
         """
         add the tier <tierpool> (the second one) to base pool 
         <pool> (the first one)
 
+        :param pool: six.string_types allowed repeats=one
         :param force_nonempty: list valid_range=["--force-nonempty"] allowed repeats=one
         :param tierpool: six.string_types allowed repeats=one
-        :param pool: six.string_types allowed repeats=one
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(tierpool,
-                          six.string_types), str(tierpool) + " is not a String"
         assert isinstance(pool,
                           six.string_types), str(pool) + " is not a String"
-        cmd = {'prefix': 'osd tier add', 'tierpool': tierpool, 'pool': pool}
+        assert isinstance(tierpool,
+                          six.string_types), str(tierpool) + " is not a String"
+        cmd = {'prefix': 'osd tier add', 'pool': pool, 'tierpool': tierpool}
 
         if force_nonempty is not None:
             ceph.validator(value=force_nonempty,
@@ -2368,66 +2368,66 @@ class OsdCommand:
             cmd['force_nonempty'] = force_nonempty
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_tier_remove(self, tierpool, pool):
+    def osd_tier_remove(self, pool, tierpool):
         """
         remove the tier <tierpool> (the second one) from base pool 
         <pool> (the first one)
 
-        :param tierpool: six.string_types allowed repeats=one
         :param pool: six.string_types allowed repeats=one
+        :param tierpool: six.string_types allowed repeats=one
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(tierpool,
-                          six.string_types), str(tierpool) + " is not a String"
         assert isinstance(pool,
                           six.string_types), str(pool) + " is not a String"
-        cmd = {'prefix': 'osd tier remove', 'tierpool': tierpool, 'pool': pool}
+        assert isinstance(tierpool,
+                          six.string_types), str(tierpool) + " is not a String"
+        cmd = {'prefix': 'osd tier remove', 'pool': pool, 'tierpool': tierpool}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_tier_cache_mode(self, pool, mode):
+    def osd_tier_cache_mode(self, mode, pool):
         """
         specify the caching mode for cache tier <pool>
 
-        :param pool: six.string_types allowed repeats=one
         :param mode: list valid_range=["none","writeback","forward","readonly","readforward","readproxy"] allowed repeats=one
+        :param pool: six.string_types allowed repeats=one
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(pool,
-                          six.string_types), str(pool) + " is not a String"
         ceph.validator(value=mode,
                        valid_type=list,
                        valid_range=["none", "writeback", "forward", "readonly",
                                     "readforward", "readproxy"]), str(
                                         mode) + " is not a list"
-        cmd = {'prefix': 'osd tier cache-mode', 'pool': pool, 'mode': mode}
+        assert isinstance(pool,
+                          six.string_types), str(pool) + " is not a String"
+        cmd = {'prefix': 'osd tier cache-mode', 'mode': mode, 'pool': pool}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_tier_set_overlay(self, overlaypool, pool):
+    def osd_tier_set_overlay(self, pool, overlaypool):
         """
         set the overlay pool for base pool <pool> to be 
         <overlaypool>
 
-        :param overlaypool: six.string_types allowed repeats=one
         :param pool: six.string_types allowed repeats=one
+        :param overlaypool: six.string_types allowed repeats=one
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
+        assert isinstance(pool,
+                          six.string_types), str(pool) + " is not a String"
         assert isinstance(
             overlaypool,
             six.string_types), str(overlaypool) + " is not a String"
-        assert isinstance(pool,
-                          six.string_types), str(pool) + " is not a String"
         cmd = {'prefix': 'osd tier set-overlay',
-               'overlaypool': overlaypool,
-               'pool': pool}
+               'pool': pool,
+               'overlaypool': overlaypool}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def osd_tier_remove_overlay(self, pool):
@@ -2445,27 +2445,27 @@ class OsdCommand:
         cmd = {'prefix': 'osd tier remove-overlay', 'pool': pool}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def osd_tier_add_cache(self, pool, size, tierpool):
+    def osd_tier_add_cache(self, size, pool, tierpool):
         """
         add a cache <tierpool> (the second one) of size <size> to 
         existing pool <pool> (the first one)
 
-        :param pool: six.string_types allowed repeats=one
         :param size: int min=0
+        :param pool: six.string_types allowed repeats=one
         :param tierpool: six.string_types allowed repeats=one
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
+        assert isinstance(size, int), str(size) + " is not a int"
         assert isinstance(pool,
                           six.string_types), str(pool) + " is not a String"
-        assert isinstance(size, int), str(size) + " is not a int"
         assert isinstance(tierpool,
                           six.string_types), str(tierpool) + " is not a String"
         cmd = {'prefix': 'osd tier add-cache',
-               'pool': pool,
                'size': size,
+               'pool': pool,
                'tierpool': tierpool}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
@@ -2705,22 +2705,22 @@ class MonitorCommand:
         cmd = {'prefix': 'quorum', 'quorumcmd': quorumcmd}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def tell(self, args, target):
+    def tell(self, target, args):
         """
         send a command to a specific daemon
 
-        :param args: six.string_types allowed repeats=many
         :param target: six.string_types
+        :param args: six.string_types allowed repeats=many
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(args,
-                          six.string_types), str(args) + " is not a String"
         assert isinstance(target,
                           six.string_types), str(target) + " is not a String"
-        cmd = {'prefix': 'tell', 'args': args, 'target': target}
+        assert isinstance(args,
+                          six.string_types), str(args) + " is not a String"
+        cmd = {'prefix': 'tell', 'target': target, 'args': args}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def version(self):
@@ -2976,8 +2976,8 @@ class AuthCommand:
         add auth info for <entity> from input file, or random key if 
         no input given, and/or any caps specified in the command
 
-        :param caps: six.string_types allowed repeats=many
         :param entity: six.string_types allowed repeats=one
+        :param caps: six.string_types allowed repeats=many
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
@@ -2993,22 +2993,22 @@ class AuthCommand:
             cmd['caps'] = caps
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
-    def auth_caps(self, caps, entity):
+    def auth_caps(self, entity, caps):
         """
         update caps for <name> from caps specified in the command
 
-        :param caps: six.string_types allowed repeats=many
         :param entity: six.string_types allowed repeats=one
+        :param caps: six.string_types allowed repeats=many
         :return: (string outbuf, string outs)
         :raise CephError: Raises CephError on command execution errors
         :raise rados.Error: Raises on rados errors
         """
 
-        assert isinstance(caps,
-                          six.string_types), str(caps) + " is not a String"
         assert isinstance(entity,
                           six.string_types), str(entity) + " is not a String"
-        cmd = {'prefix': 'auth caps', 'caps': caps, 'entity': entity}
+        assert isinstance(caps,
+                          six.string_types), str(caps) + " is not a String"
+        cmd = {'prefix': 'auth caps', 'entity': entity, 'caps': caps}
         return run_ceph_command(self.rados_config_file, cmd, inbuf='')
 
     def auth_del(self, entity):
