@@ -9,3 +9,4 @@ library instead.  You'll save yourself many future headaches.
 The utility that generates these helper functions is located here:
 `Ceph Command Parser <https://github.com/cholcombe973/ceph_command_parser>`_
 
+Please install python-ceph for this library to function properly.
